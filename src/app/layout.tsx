@@ -1,15 +1,21 @@
-
-import type { Metadata } from 'next';
-import './globals.css';
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/layout/theme-provider";
-import { Header } from "@/components/layout/header";
-import { AuthProvider } from '@/hooks/use-auth';
 import { Footer } from '@/components/layout/footer';
+import { Header } from "@/components/layout/header";
+import { ThemeProvider } from "@/components/layout/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from '@/hooks/use-auth';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Linux User Group - BITS Pilani Dubai',
-  description: 'Homepage for the Linux User Group at BITS Pilani Dubai Campus.',
+  title: 'Linux User Group - BITS Pilani Dubai Campus',
+  description: 'Join the Linux User Group at BITS Pilani Dubai Campus. Explore open-source technology, participate in workshops, and connect with fellow enthusiasts.',
+  keywords: 'Linux, Open Source, BITS Pilani, Dubai, Technology, Programming, Workshops',
+  authors: [{ name: 'Linux User Group BPDC' }],
+  viewport: 'width=device-width, initial-scale=1',
+  themeColor: '#0f172a',
 };
 
 export default function RootLayout({
@@ -19,22 +25,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Source+Code+Pro&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased min-h-screen bg-background text-foreground font-sans" suppressHydrationWarning>
-        <ThemeProvider defaultTheme="dark" storageKey="lug-theme">
-          <AuthProvider>
-            <div className="relative flex min-h-screen flex-col">
+      <body className={`${inter.className} antialiased min-h-screen`}>
+        <AuthProvider>
+          <ThemeProvider
+            defaultTheme="dark"
+            storageKey="lug-theme"
+          >
+            <div className="flex flex-col min-h-screen">
               <Header />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1">
+                {children}
+              </main>
               <Footer />
             </div>
             <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

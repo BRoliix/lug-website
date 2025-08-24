@@ -1,9 +1,15 @@
-
 "use client";
-
 import Carousel3D, { Carousel3DItem } from "@/components/carousel-3d";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Users, Target, Activity } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useState } from "react";
 
 export default function AboutPage() {
+  const [activeCard, setActiveCard] = useState(0);
+
   const carouselItems: Carousel3DItem[] = [
     {
       id: 1,
@@ -34,20 +40,106 @@ export default function AboutPage() {
     }
   ];
 
-  return (
-    <div className="relative w-full overflow-hidden">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]">
-        <div className="absolute left-0 right-0 top-1/4 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-primary/10 blur-[100px]"></div>
-      </div>
+  const getIcon = (index: number) => {
+    const icons = [Users, Target, Activity];
+    return icons[index] || Users;
+  };
 
-      <div className="container py-12 md:py-20 flex flex-col items-center justify-center">
-        <div className="text-center mb-16 animate-fadeInUp">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold">About LUG</h1>
-          <p className="text-lg text-muted-foreground mt-2">Learn more about our community and what drives us.</p>
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16">
+        {/* Header Section */}
+        <div className="text-center mb-8 lg:mb-16">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4 lg:mb-6">
+            About <span className="text-orange-400">LUG</span>
+          </h1>
+          <p className="text-lg sm:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            Learn more about our community and what drives us.
+          </p>
         </div>
-        
-        <Carousel3D items={carouselItems} rotateInterval={20000} />
+
+        {/* Desktop Carousel - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <Carousel3D items={carouselItems} />
+        </div>
+
+        {/* Mobile/Tablet Cards - Visible on mobile and tablet */}
+        <div className="lg:hidden space-y-6">
+          {carouselItems.map((item, index) => {
+            const IconComponent = getIcon(index);
+            return (
+              <Card 
+                key={item.id} 
+                className="bg-gray-900/50 border border-gray-800/50 backdrop-blur-sm hover:bg-gray-800/50 transition-all duration-300"
+              >
+                {/* Card Image */}
+                <div className="relative h-48 sm:h-56 rounded-t-lg overflow-hidden">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  
+                  {/* Brand Badge */}
+                  <div className="absolute top-4 left-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                    {item.brand}
+                  </div>
+                </div>
+
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
+                      <IconComponent className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-white">
+                      {item.title}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <p className="text-gray-300 leading-relaxed text-sm sm:text-base">
+                    {item.description}
+                  </p>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {item.tags.map((tag, tagIndex) => (
+                      <span
+                        key={tagIndex}
+                        className="px-3 py-1 bg-gray-800/50 text-gray-300 text-xs rounded-full border border-gray-700/50"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Learn More Button */}
+                  <div className="pt-2">
+                    <Button
+                      asChild
+                      className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2 transition-all duration-300"
+                    >
+                      <Link 
+                        href={item.link}
+                        target={item.link.startsWith('http') ? '_blank' : '_self'}
+                        rel={item.link.startsWith('http') ? 'noopener noreferrer' : undefined}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        Learn more
+                        <ExternalLink className="w-4 h-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </div>
-  )
+  );
 }

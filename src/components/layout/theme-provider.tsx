@@ -1,14 +1,15 @@
-
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from "react"
 
-type Theme = "light" | "dark"
+type Theme = "light" | "dark" | "system"
 
 type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
+  enableSystem?: boolean
+  disableTransitionOnChange?: boolean
 }
 
 type ThemeProviderState = {
@@ -31,36 +32,54 @@ export function ThemeProvider({
   children,
   defaultTheme = "light",
   storageKey = "lug-theme",
+  enableSystem = true,
+  disableTransitionOnChange = false,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [isTerminal, setIsTerminal] = useState(false);
 
-
   useEffect(() => {
     try {
       const storedTheme = localStorage.getItem(storageKey) as Theme | null;
-      if (storedTheme) {
+      if (storedTheme && (storedTheme === "system" ? enableSystem : true)) {
         setTheme(storedTheme);
       }
+
       const storedTerminal = localStorage.getItem(`${storageKey}-terminal`) === 'true';
       setIsTerminal(storedTerminal);
     } catch (e) {
       // Ignore localStorage errors
     }
-  }, [storageKey]);
+  }, [storageKey, enableSystem]);
 
   useEffect(() => {
     const root = window.document.documentElement
+    const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    
     root.classList.remove("light", "dark", "terminal")
     
     if(isTerminal) {
       root.classList.add("terminal");
     } else {
-      root.classList.add(theme)
+      root.classList.add(isDark ? "dark" : "light")
     }
-
   }, [theme, isTerminal])
+
+  // Handle system theme changes
+  useEffect(() => {
+    if (theme === "system" && enableSystem) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
+      const handleChange = () => {
+        const root = window.document.documentElement
+        root.classList.remove("light", "dark")
+        root.classList.add(mediaQuery.matches ? "dark" : "light")
+      }
+
+      mediaQuery.addEventListener("change", handleChange)
+      return () => mediaQuery.removeEventListener("change", handleChange)
+    }
+  }, [theme, enableSystem])
 
   const value = useMemo(() => ({
     theme,
@@ -92,8 +111,10 @@ export function ThemeProvider({
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext)
+
   if (context === undefined) {
     throw new Error("useTheme must be used within a ThemeProvider")
   }
+
   return context
 }
