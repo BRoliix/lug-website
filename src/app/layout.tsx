@@ -25,15 +25,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased min-h-screen`}>
+      <body className={`${inter.className} antialiased min-h-screen overflow-x-hidden`}>
         <AuthProvider>
           <ThemeProvider
+            attribute="class"
             defaultTheme="dark"
+            enableSystem
             storageKey="lug-theme"
           >
-            <div className="flex flex-col min-h-screen">
+            {/* Mobile-first flex layout with proper height and overflow control */}
+            <div className="flex flex-col min-h-screen w-full">
               <Header />
-              <main className="flex-1">
+              <main className="flex-1 w-full overflow-x-hidden">
                 {children}
               </main>
               <Footer />
