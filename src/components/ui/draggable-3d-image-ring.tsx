@@ -1,10 +1,8 @@
-
 "use client";
-
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, easeOut } from "framer-motion";
 import { animate } from "framer-motion";
-import { cn } from "@/lib/utils"; 
+import { cn } from "@/lib/utils";
 
 export interface Draggable3DImageRingProps {
   images: string[];
@@ -22,7 +20,9 @@ export interface Draggable3DImageRingProps {
   draggable?: boolean;
   ease?: "linear" | "easeIn" | "easeOut" | "easeInOut" | "circIn" | "circOut" | "circInOut" | "backIn" | "backOut" | "backInOut" | "anticipate";
   mobileBreakpoint?: number;
+  tabletBreakpoint?: number;
   mobileScaleFactor?: number;
+  tabletScaleFactor?: number;
   inertiaPower?: number;
   inertiaTimeConstant?: number;
   inertiaVelocityMultiplier?: number;
@@ -44,8 +44,10 @@ export function Draggable3DImageRing({
   imageClassName,
   backgroundColor,
   draggable = true,
-  mobileBreakpoint = 768,
-  mobileScaleFactor = 0.8,
+  mobileBreakpoint = 640,
+  tabletBreakpoint = 1024,
+  mobileScaleFactor = 0.6,
+  tabletScaleFactor = 0.8,
   inertiaPower = 0.8,
   inertiaTimeConstant = 300,
   inertiaVelocityMultiplier = 20,
@@ -54,54 +56,50 @@ export function Draggable3DImageRing({
 }: Draggable3DImageRingProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
-
   const rotationY = useMotionValue(initialRotation);
   const startX = useRef<number>(0);
   const currentRotationY = useRef<number>(initialRotation);
   const isDragging = useRef<boolean>(false);
   const velocity = useRef<number>(0);
-
   const [currentScale, setCurrentScale] = useState(1);
   const [showImages, setShowImages] = useState(false);
+  const [responsiveDimensions, setResponsiveDimensions] = useState({ width, perspective: perspective, imageDistance });
 
   const angle = useMemo(() => 360 / images.length, [images.length]);
 
   const getBgPos = (imageIndex: number, currentRot: number, scale: number) => {
-    const scaledImageDistance = imageDistance * scale;
+    const scaledImageDistance = responsiveDimensions.imageDistance * scale;
     const effectiveRotation = currentRot - 180 - imageIndex * angle;
     const parallaxOffset = ((effectiveRotation % 360 + 360) % 360) / 360;
     return `${-(parallaxOffset * (scaledImageDistance / 1.5))}px 0px`;
   };
-  
-    useEffect(() => {
-      let animationFrameId: number;
 
-      const continuousRotation = () => {
-        if (!isDragging.current && rotationSpeed > 0) {
-            const direction = rotationDirection === 'clockwise' ? 1 : -1;
-            rotationY.set(rotationY.get() + rotationSpeed * direction);
-        }
-        animationFrameId = requestAnimationFrame(continuousRotation);
-      };
-
-      if (rotationSpeed > 0) {
-        animationFrameId = requestAnimationFrame(continuousRotation);
+  useEffect(() => {
+    let animationFrameId: number;
+    const continuousRotation = () => {
+      if (!isDragging.current && rotationSpeed > 0) {
+        const direction = rotationDirection === 'clockwise' ? 1 : -1;
+        rotationY.set(rotationY.get() + rotationSpeed * direction);
       }
-      
-      return () => {
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-        }
-      };
-    }, [rotationSpeed, rotationDirection, rotationY]);
+      animationFrameId = requestAnimationFrame(continuousRotation);
+    };
+    if (rotationSpeed > 0) {
+      animationFrameId = requestAnimationFrame(continuousRotation);
+    }
 
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [rotationSpeed, rotationDirection, rotationY]);
 
   useEffect(() => {
     const unsubscribe = rotationY.on("change", (latestRotation) => {
       if (ringRef.current) {
         Array.from(ringRef.current.children).forEach((imgElement, i) => {
           if (imgElement instanceof HTMLElement) {
-             imgElement.style.backgroundPosition = getBgPos(
+            imgElement.style.backgroundPosition = getBgPos(
               i,
               latestRotation,
               currentScale
@@ -112,25 +110,45 @@ export function Draggable3DImageRing({
       currentRotationY.current = latestRotation;
     });
     return () => unsubscribe();
-  }, [rotationY, images.length, imageDistance, currentScale, angle]);
+  }, [rotationY, images.length, currentScale, angle, responsiveDimensions.imageDistance]);
 
   useEffect(() => {
     const handleResize = () => {
       const viewportWidth = window.innerWidth;
-      const newScale = viewportWidth <= mobileBreakpoint ? mobileScaleFactor : 1;
+      let newScale = 1;
+      let newWidth = width;
+      let newPerspective = perspective;
+      let newImageDistance = imageDistance;
+
+      if (viewportWidth <= mobileBreakpoint) {
+        newScale = mobileScaleFactor;
+        newWidth = Math.min(width * 0.7, viewportWidth * 0.8);
+        newPerspective = perspective * 0.6;
+        newImageDistance = imageDistance * 0.6;
+      } else if (viewportWidth <= tabletBreakpoint) {
+        newScale = tabletScaleFactor;
+        newWidth = Math.min(width * 0.85, viewportWidth * 0.7);
+        newPerspective = perspective * 0.8;
+        newImageDistance = imageDistance * 0.8;
+      }
+
       setCurrentScale(newScale);
+      setResponsiveDimensions({
+        width: newWidth,
+        perspective: newPerspective,
+        imageDistance: newImageDistance
+      });
     };
 
     window.addEventListener("resize", handleResize);
     handleResize();
-
     return () => window.removeEventListener("resize", handleResize);
-  }, [mobileBreakpoint, mobileScaleFactor]);
+  }, [mobileBreakpoint, tabletBreakpoint, mobileScaleFactor, tabletScaleFactor, width, perspective, imageDistance]);
 
   useEffect(() => {
     setShowImages(true);
   }, []);
-  
+
   const handleDrag = (event: MouseEvent | TouchEvent) => {
     if (!draggable || !isDragging.current) return;
     const clientX = "touches" in event ? (event as TouchEvent).touches[0].clientX : (event as MouseEvent).clientX;
@@ -142,31 +160,26 @@ export function Draggable3DImageRing({
   };
 
   const handleDragEnd = () => {
-    if(!isDragging.current) return;
+    if (!isDragging.current) return;
     isDragging.current = false;
-
     if (ringRef.current) {
       ringRef.current.style.cursor = "grab";
     }
-
     document.removeEventListener("mousemove", handleDrag);
     document.removeEventListener("mouseup", handleDragEnd);
     document.removeEventListener("touchmove", handleDrag);
     document.removeEventListener("touchend", handleDragEnd);
-
-    if (draggable) { // Only apply inertia if draggable
-        const velocityBoost = velocity.current * inertiaVelocityMultiplier;
-
-        animate(rotationY, rotationY.get() + velocityBoost, {
-          type: "inertia",
-          velocity: velocityBoost,
-          power: inertiaPower,
-          timeConstant: inertiaTimeConstant,
-          restDelta: 0.5,
-          modifyTarget: (target) => Math.round(target / angle) * angle,
-        });
+    if (draggable) {
+      const velocityBoost = velocity.current * inertiaVelocityMultiplier;
+      animate(rotationY, rotationY.get() + velocityBoost, {
+        type: "inertia",
+        velocity: velocityBoost,
+        power: inertiaPower,
+        timeConstant: inertiaTimeConstant,
+        restDelta: 0.5,
+        modifyTarget: (target) => Math.round(target / angle) * angle,
+      });
     }
-
     velocity.current = 0;
   };
 
@@ -177,17 +190,15 @@ export function Draggable3DImageRing({
     startX.current = clientX;
     velocity.current = 0;
     rotationY.stop();
-    
+
     if (ringRef.current) {
       (ringRef.current as HTMLElement).style.cursor = "grabbing";
     }
-
     document.addEventListener("mousemove", handleDrag);
     document.addEventListener("mouseup", handleDragEnd);
     document.addEventListener("touchmove", handleDrag);
     document.addEventListener("touchend", handleDragEnd);
   };
-
 
   const imageVariants = {
     hidden: { y: 200, opacity: 0 },
@@ -206,26 +217,24 @@ export function Draggable3DImageRing({
     <div
       ref={containerRef}
       className={cn(
-        "w-full h-full overflow-hidden select-none relative",
+        "w-full h-full max-w-full overflow-hidden select-none relative flex items-center justify-center px-2 sm:px-4",
         containerClassName
       )}
       style={{
         backgroundColor,
-        transform: `scale(${currentScale})`,
-        transformOrigin: "center center",
+        minHeight: "300px",
       }}
       onMouseDown={draggable ? handleDragStart : undefined}
       onTouchStart={draggable ? handleDragStart : undefined}
     >
       <div
+        className="relative flex items-center justify-center"
         style={{
-          perspective: `${perspective}px`,
-          width: `${width}px`,
-          height: `${width * 1.33}px`,
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          transform: "translate(-50%, -50%)",
+          perspective: `${responsiveDimensions.perspective}px`,
+          width: `${responsiveDimensions.width}px`,
+          height: `${responsiveDimensions.width * 1.2}px`,
+          maxWidth: "100%",
+          maxHeight: "100%",
         }}
       >
         <motion.div
@@ -245,7 +254,7 @@ export function Draggable3DImageRing({
               <motion.div
                 key={index}
                 className={cn(
-                  "w-full h-full absolute",
+                  "w-full h-full absolute rounded-lg overflow-hidden shadow-lg",
                   imageClassName
                 )}
                 style={{
@@ -253,11 +262,11 @@ export function Draggable3DImageRing({
                   backgroundImage: `url(${imageUrl})`,
                   backgroundSize: "cover",
                   backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
                   backfaceVisibility: "hidden",
                   rotateY: index * -angle,
-                  z: -imageDistance * currentScale,
-                  transformOrigin: `50% 50% ${imageDistance * currentScale}px`,
-                  backgroundPosition: getBgPos(index, currentRotationY.current, currentScale),
+                  z: -responsiveDimensions.imageDistance * currentScale,
+                  transformOrigin: `50% 50% ${responsiveDimensions.imageDistance * currentScale}px`,
                 }}
                 initial="hidden"
                 animate="visible"
@@ -265,7 +274,7 @@ export function Draggable3DImageRing({
                 variants={imageVariants}
                 custom={index}
                 transition={{
-                    opacity: { duration: 0.15 }
+                  opacity: { duration: 0.15 }
                 }}
                 whileHover={{ opacity: 1 }}
                 onHoverStart={() => {
