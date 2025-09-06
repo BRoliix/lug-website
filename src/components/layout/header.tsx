@@ -1,6 +1,4 @@
-
 "use client"
-
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
@@ -34,15 +32,19 @@ export function Header() {
     if ((featureFlags?.showJoinUs && canShowGuestLinks) || isAdmin) {
       dynamicLinks.push({ href: "/join-us", label: "Join Us" });
     }
+
     if ((featureFlags?.showEvents && canShowGuestLinks) || isAdmin) {
       dynamicLinks.push({ href: "/events", label: "Events" });
     }
+
     if ((featureFlags?.showForum && canShowGuestLinks) || isAdmin) {
         dynamicLinks.push({ href: "/forum", label: "Forum" });
     }
+
     if (user) {
       dynamicLinks.push({ href: "/profile", label: "Profile" });
     }
+
     if (isAdmin) {
       dynamicLinks.push({ href: "/admin", label: "Admin" });
     }
@@ -67,7 +69,7 @@ export function Header() {
         onClick={() => mobile && setIsOpen(false)}
         className={cn(
           "transition-colors hover:text-foreground/80",
-           mobile ? "hover:text-foreground" : "",
+           mobile ? "hover:text-foreground text-base py-2" : "",
           pathname === link.href ? "text-foreground" : "text-foreground/60"
         )}
       >
@@ -78,23 +80,48 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-24 max-w-screen-2xl items-center">
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2 group">
-            <Image src="/images/lug_logo.png" alt="LUG Logo" width={80} height={80} className="h-20 w-20" data-ai-hint="logo" priority />
-            <div className="font-bold sm:inline-block relative whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out w-10 group-hover:w-52">
+      <div className="container flex h-16 max-w-screen-2xl items-center justify-between px-4">
+        {/* Desktop Logo and Nav */}
+        <div className="mr-4 hidden md:flex items-center">
+          <Link className="mr-6 flex items-center space-x-2 group" href="/">
+            <Image
+              alt="LUG Logo"
+              className="h-12 w-12"
+              data-ai-hint="logo"
+              height={48}
+              priority
+              src="/images/lug_logo.png"
+              width={48}
+            />
+            <div className="font-bold relative whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out w-10 group-hover:w-52">
               <span className="opacity-100 group-hover:opacity-0 transition-opacity duration-300">LUG</span>
               <span className="absolute left-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 Linux User Group BPDC
               </span>
             </div>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium transition-all duration-300 ease-in-out">
+          <nav className="flex items-center space-x-6 text-sm font-medium">
              {renderNavLinks(baseNavLinks)}
              {isClient ? renderNavLinks(getDynamicNavLinks()) : <Skeleton className="h-6 w-48" />}
           </nav>
         </div>
         
+        {/* Mobile Logo */}
+        <div className="flex md:hidden items-center">
+          <Link className="flex items-center space-x-2" href="/">
+            <Image
+              alt="LUG Logo"
+              className="h-10 w-10"
+              data-ai-hint="logo"
+              height={40}
+              src="/images/lug_logo.png"
+              width={40}
+            />
+            <span className="font-bold text-lg">LUG</span>
+          </Link>
+        </div>
+        
+        {/* Mobile Navigation Sheet */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button
@@ -105,49 +132,55 @@ export function Header() {
               <span className="sr-only">Toggle Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="pr-0">
+          <SheetContent className="pr-0 w-full max-w-xs" side="left">
              <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
             <SheetDescription className="sr-only">
               A list of links to navigate the website.
             </SheetDescription>
-            <Link href="/" className="flex items-center" onClick={() => setIsOpen(false)}>
-              <Image src="/images/lug_logo.png" alt="LUG Logo" width={80} height={80} className="mr-2 h-20 w-20" data-ai-hint="logo" />
-              <span className="font-bold">LUG</span>
+            <Link className="flex items-center mb-6" href="/" onClick={() => setIsOpen(false)}>
+              <Image
+                alt="LUG Logo"
+                className="mr-2 h-12 w-12"
+                data-ai-hint="logo"
+                height={48}
+                src="/images/lug_logo.png"
+                width={48}
+              />
+              <span className="font-bold text-lg">Linux User Group</span>
             </Link>
-            <div className="my-4 h-[calc(100vh-8rem)] pb-10 pl-6">
-              <div className="flex flex-col space-y-3">
-                {renderNavLinks(baseNavLinks, true)}
-                {isClient ? renderNavLinks(getDynamicNavLinks(), true) : <Skeleton className="h-6 w-32 mt-3" />}
-              </div>
+            <div className="flex flex-col space-y-4 overflow-y-auto">
+              {renderNavLinks(baseNavLinks, true)}
+              {isClient ? renderNavLinks(getDynamicNavLinks(), true) : <Skeleton className="h-6 w-32 mt-3" />}
             </div>
           </SheetContent>
         </Sheet>
         
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-             {/* Future search bar can go here */}
-          </div>
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={handleTerminalLink} aria-label="Open Terminal View">
-                <TerminalIcon className="h-5 w-5" />
-            </Button>
-            {isClient ? (
-              user ? (
-                  <Button variant="ghost" size="sm" onClick={signOutUser}>
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign Out
-                  </Button>
-              ) : (
-                showSignInButton && (
-                  <Button asChild>
-                    <Link href="/signin">Sign In</Link>
-                  </Button>
-                )
-              )
+        {/* Right side actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            aria-label="Open Terminal View"
+            onClick={handleTerminalLink}
+            size="icon"
+            variant="ghost"
+          >
+              <TerminalIcon className="h-5 w-5" />
+          </Button>
+          {isClient ? (
+            user ? (
+                <Button onClick={signOutUser} size="sm" variant="ghost">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                </Button>
             ) : (
-              <Skeleton className="h-9 w-24" />
-            )}
-          </nav>
+              showSignInButton && (
+                <Button asChild>
+                  <Link href="/signin">Sign In</Link>
+                </Button>
+              )
+            )
+          ) : (
+            <Skeleton className="h-9 w-24" />
+          )}
         </div>
       </div>
     </header>
