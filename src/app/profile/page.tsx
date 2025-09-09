@@ -1,5 +1,5 @@
 
-import { ProfileTabs } from "@/components/profile/profile-tabs";
+import ProfileWrapper from '../../components/profile/ProfileWrapper';
 import { Button } from "@/components/ui/button";
 import { Bug } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +15,7 @@ export default function ProfilePage() {
                     <h1 className="text-4xl md:text-5xl font-headline font-bold">My Dashboard</h1>
                     <p className="text-lg text-muted-foreground mt-2">Manage your profile, events, and certificates.</p>
                 </div>
-                <ProfileTabs />
+                <ProfileWrapper />
             </div>
         </div>
     );
