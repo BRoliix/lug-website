@@ -15,6 +15,7 @@ import { Skeleton } from "../ui/skeleton"
 const baseNavLinks = [
   { href: "/about", label: "About" },
   { href: "/council", label: "Council" },
+  { href: "/events", label: "Events" },
 ];
 
 export function Header() {
@@ -34,9 +35,7 @@ export function Header() {
     if ((featureFlags?.showJoinUs && canShowGuestLinks) || isAdmin) {
       dynamicLinks.push({ href: "/join-us", label: "Join Us" });
     }
-    if ((featureFlags?.showEvents && canShowGuestLinks) || isAdmin) {
-      dynamicLinks.push({ href: "/events", label: "Events" });
-    }
+    // Events is now a base nav link; avoid adding a duplicate here
     if ((featureFlags?.showForum && canShowGuestLinks) || isAdmin) {
         dynamicLinks.push({ href: "/forum", label: "Forum" });
     }
